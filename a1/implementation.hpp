@@ -82,14 +82,13 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 	// 		}
 	// 	}
 
-	#pragma omp parallel
+	 #pragma omp parallel
         {
-            for (int d = 1; d < rows + cols - 1; d++) {
-                #pragma omp single
-                {
+            #pragma omp single
+            {
+                for (int d = 1; d < rows + cols - 1; d++) {
                     int start_row = std::max(1, d - (int)cols + 1);
                     int end_row = std::min(d, (int)rows - 1);
-                    int num_elements = end_row - start_row + 1;
 
                     #pragma omp taskloop firstprivate(start_row, end_row, SUB, cmap, X, Y) reduction(+:visited) shared(S, gap_penalty)
                     for (int i = start_row; i <= end_row; i++) {
@@ -103,7 +102,6 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
                         visited++;
                     }
                 }
-                #pragma omp barrier
             }
 
 
