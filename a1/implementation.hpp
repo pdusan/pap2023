@@ -94,9 +94,9 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 
 		#pragma omp single
 		{
-			localS = new float*[rows]
+			localS = new float*[rows];
 			for (unsigned int i = 0; i < rows; ++i)
-				localS[i] = new float[cols]
+				localS[i] = new float[cols];
 		}
 
 		#pragma omp tasklopp reduction(+ : visited) shared(S, localS, gap_penalty) firstprvate(rows, cols, SUB, cmap, X, Y)
