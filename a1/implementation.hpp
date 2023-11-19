@@ -129,7 +129,8 @@ unsigned long SequenceInfo::gpsa_tasks(float **S, float **SUB, std::unordered_ma
 			{
 				for (unsigned int j = 1; j < cols; j++)
 				{	
-					#pragma omp task shared(S, SUB, X, Y, gap_penalty, visited) firstprivate(i, j)
+					#pragma omp task shared(S, SUB, X, Y, gap_penalty, visited) firstprivate(i, j) {
+
 					float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
 					float del = S[i - 1][j] + gap_penalty;
 					float insert = S[i][j - 1] + gap_penalty;
@@ -137,6 +138,7 @@ unsigned long SequenceInfo::gpsa_tasks(float **S, float **SUB, std::unordered_ma
 
 					#pragma omp atomic
 					visited++;
+					}
 				}
 			}
 
