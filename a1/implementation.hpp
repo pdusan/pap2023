@@ -68,7 +68,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 	#pragma omp parallel
 	{
 		#pragma omp single
-		#pragma omp taskloop grainsize(grain_size) reduction(+ : visited)
+		#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
 		for (unsigned int i = 1; i < rows; i++)
 		{
 			for (unsigned int j = 1; j < cols; j++)
@@ -76,6 +76,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 				float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
 				float del = S[i - 1][j] + gap_penalty;
 				float insert = S[i][j - 1] + gap_penalty;
+				#pragma omp critical
 				S[i][j] = std::max({match, del, insert});
 		
 				visited++;
