@@ -92,29 +92,52 @@ unsigned long SequenceInfo::gpsa_tasks(float **S, float **SUB, std::unordered_ma
 	gap_penalty = SUB[0][cmap['*']]; // min score
 
 	// Boundary
-	for (unsigned int i = 1; i < rows; i++)
+	#pragma omp parallel 
 	{
-		S[i][0] = i * gap_penalty;
-		visited++;
-	}
+		#pragma omp single 
+		{
+			for (unsigned int i = 1; i < rows; i++)
+			{	
+				#pragma omp task reduction(+ : visited) shared(S, gap_penalty)
+				{
+					S[i][0] = i * gap_penalty;
+					visited++;
+				}
+			}
 
-	for (unsigned int j = 0; j < cols; j++)
-	{
-		S[0][j] = j * gap_penalty;
-		visited++;
+			for (unsigned int j = 0; j < cols; j++)
+			{	
+				#pragma omp task reduction(+ : visited) shared(S, gap_penalty)
+				{
+					S[0][j] = j * gap_penalty;
+					visited++;
+				}
+			}
+
+			#pragma omp taskwait
+		}
 	}
 
 	// Main part
-	for (unsigned int i = 1; i < rows; i++)
+	#pragma omp parallel
 	{
-		for (unsigned int j = 1; j < cols; j++)
+		#pragma omp single
 		{
-			float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
-			float del = S[i - 1][j] + gap_penalty;
-			float insert = S[i][j - 1] + gap_penalty;
-			S[i][j] = std::max({match, del, insert});
+			for (unsigned int i = 1; i < rows; i++)
+			{
+				for (unsigned int j = 1; j < cols; j++)
+				{	
+					#pragma omp task reduction(+ : visited) shared(S, SUB, X, Y, gap_penalty) firstprivate(i, j)
+					float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
+					float del = S[i - 1][j] + gap_penalty;
+					float insert = S[i][j - 1] + gap_penalty;
+					S[i][j] = std::max({match, del, insert});
 
-			visited++;
+					visited++;
+				}
+			}
+
+			#pragma omp taskwait
 		}
 	}
 	return visited;
