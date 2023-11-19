@@ -75,7 +75,6 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 				float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
 				float del = S[i - 1][j] + gap_penalty;
 				float insert = S[i][j - 1] + gap_penalty;
-				#pragma omp critical
 				S[i][j] = std::max({match, del, insert});
 		
 				visited++;
