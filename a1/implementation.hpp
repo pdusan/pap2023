@@ -43,28 +43,31 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 	unsigned long visited = 0;
 	gap_penalty = SUB[0][cmap['*']]; // min score
 
-#pragma omp parallel
+	// Boundary
+	#pragma omp parallel
 	{
-#pragma omp single
-#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
-		// Boundary
-		for (unsigned int i = 1; i < rows; i++)
+		#pragma omp single
 		{
-			S[i][0] = i * gap_penalty;
-			visited++;
-		}
+			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, gap_penalty) firstprivate(rows)
+			for (unsigned int i = 1; i < rows; i++)
+			{
+				S[i][0] = i * gap_penalty;
+				visited++;
+			}
 
-#pragma omp single
-#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
-		for (unsigned int j = 0; j < cols; j++)
-		{
-			S[0][j] = j * gap_penalty;
-			visited++;
+			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, gap_penalty) firstprivate(cols)
+			for (unsigned int j = 0; j < cols; j++)
+			{
+				S[0][j] = j * gap_penalty;
+				visited++;
+			}
 		}
-
-#pragma omp single
-#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
-		// Main part
+	}
+	// Main part
+	#pragma omp parallel
+	{
+		#pragma omp single
+		#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, gap_penalty) firstprivate(rows, cols, SUB, cmap, X, Y)
 		for (unsigned int i = 1; i < rows; i++)
 		{
 			for (unsigned int j = 1; j < cols; j++)
@@ -77,7 +80,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 				visited++;
 			}
 		}
-	}
+	}		
 
 	return visited;
 }
