@@ -46,7 +46,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 #pragma omp parallel
 	{
 #pragma omp single
-#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
+#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, gap_penalty) firstprivate(rows)
 		// Boundary
 		for (unsigned int i = 1; i < rows; i++)
 		{
@@ -55,7 +55,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 		}
 
 #pragma omp single
-#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
+#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, gap_penalty) firstprivate(cols)
 		for (unsigned int j = 0; j < cols; j++)
 		{
 			S[0][j] = j * gap_penalty;
