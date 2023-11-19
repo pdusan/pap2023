@@ -94,18 +94,19 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 
 		#pragma omp single
 		{
-			localS = new float*[rows];
-			for (unsigned int i = 0; i < rows; ++i)
+			localS = new float*[omp_get_num_threads()];
+			for (unsigned int i = 0; i < omp_get_num_threads(); ++i)
 				localS[i] = new float[cols];
 		}
 
+		int threadId = omp_get_thread_num();
 		#pragma omp tasklopp reduction(+ : visited) shared(S, localS, gap_penalty) firstprvate(rows, cols, SUB, cmap, X, Y)
 		for (unsigned int i = 1; i < rows; i++) {
             for (unsigned int j = 1; j < cols; j++) {
                 float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
                 float del = S[i - 1][j] + gap_penalty;
                 float insert = S[i][j - 1] + gap_penalty;
-                localS[i][j] = std::max({match, del, insert});
+                localS[threadId][j] = std::max({match, del, insert});
                 visited++;
             }
         }
@@ -115,7 +116,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 			 // Combine the local copies into the global matrix
                 for (unsigned int i = 1; i < rows; i++) {
                     for (unsigned int j = 1; j < cols; j++) {
-                        S[i][j] = localS[i][j];
+                        S[i][j] = localS[0][j];
                     }
                 }
                 delete[] localS;
