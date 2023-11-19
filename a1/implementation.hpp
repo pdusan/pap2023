@@ -64,7 +64,6 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 		}
 	}
 	
-	Main part
 	#pragma omp parallel
 	{
 		#pragma omp single
