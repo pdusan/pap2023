@@ -63,7 +63,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 		}
 
 #pragma omp single
-#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
+#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) firstprivate(SUB, cmap, X, Y) shared(S, gap_penalty)
 		// Main part
 		for (unsigned int i = 1; i < rows; i++)
 		{
