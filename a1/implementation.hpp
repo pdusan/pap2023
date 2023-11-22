@@ -67,18 +67,20 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 	#pragma omp parallel
 	{
 		#pragma omp single
-		#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
-		for (int d = 1; d < rows + cols - 1; d++)
+		for (int d = 1; d < rows+cols-1; d++)
 		{
-			for (unsigned int i = std::min(d, cols-1) + 1; i < std::max(0, d-rows+1); i++)
+			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, SUB, cmap)
+			for (unsigned int i = std::max(1, d-cols+1); i < std::min(d,rows-1)+1; i++)
 			{
 				unsigned int j = d - i;
-				float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
-				float del = S[i - 1][j] + gap_penalty;
-				float insert = S[i][j - 1] + gap_penalty;
-				S[i][j] = std::max({match, del, insert});
-		
-				visited++;
+				if (j>0) {
+					float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
+					float del = S[i - 1][j] + gap_penalty;
+					float insert = S[i][j - 1] + gap_penalty;
+					S[i][j] = std::max({match, del, insert});
+
+					visited++;
+				}
 			}
 		}
 	}
@@ -102,7 +104,7 @@ unsigned long SequenceInfo::gpsa_tasks(float **S, float **SUB, std::unordered_ma
 				#pragma omp task shared(S, gap_penalty, visited)
 				{
 					S[i][0] = i * gap_penalty;
-					#pragma omp atomic
+					// #pragma omp atomic
 					visited++;
 				}
 			}
@@ -112,7 +114,7 @@ unsigned long SequenceInfo::gpsa_tasks(float **S, float **SUB, std::unordered_ma
 				#pragma omp task shared(S, gap_penalty, visited)
 				{
 					S[0][j] = j * gap_penalty;
-					#pragma omp atomic
+					// #pragma omp atomic
 					visited++;
 				}
 			}
@@ -138,7 +140,7 @@ unsigned long SequenceInfo::gpsa_tasks(float **S, float **SUB, std::unordered_ma
 					float insert = S[i][j - 1] + gap_penalty;
 					S[i][j] = std::max({match, del, insert});
 
-					#pragma omp atomic
+					// #pragma omp atomic
 					visited++;
 					}
 				}
