@@ -48,14 +48,14 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 	{
 		#pragma omp single
 		{
-			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(gap_penalty, rows) lastprivate(S)
+			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S) firstprivate(gap_penalty, rows)
 			for (unsigned int i = 1; i < rows; i++)
 			{
 				S[i][0] = i * gap_penalty;
 				visited++;
 			}
 
-			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(gap_penalty, cols) lastprivate(S)
+			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S) firstprivate(gap_penalty, cols)
 			for (unsigned int j = 0; j < cols; j++)
 			{
 				S[0][j] = j * gap_penalty;
