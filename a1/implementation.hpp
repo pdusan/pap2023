@@ -67,7 +67,7 @@ unsigned long SequenceInfo::gpsa_taskloop(float **S, float **SUB, std::unordered
 	#pragma omp parallel
 	{
 		#pragma omp single
-		for (int d = 1; d < rows+cols-1; d++)
+		for (int d = 1; d < rows+cols-1; d+=grain_size)
 		{
 			#pragma omp taskloop grainsize(grain_size) reduction(+ : visited) shared(S, cmap) firstprivate(gap_penalty,SUB, d)
 			for (unsigned int i = std::max(1, d-cols+1); i < std::min(d,rows-1)+1; i++)
@@ -95,54 +95,33 @@ unsigned long SequenceInfo::gpsa_tasks(float **S, float **SUB, std::unordered_ma
 	gap_penalty = SUB[0][cmap['*']]; // min score
 
 	// Boundary
-	#pragma omp parallel 
+	for (unsigned int i = 1; i < rows; i++)
 	{
-		#pragma omp single 
-		{
-			for (unsigned int i = 1; i < rows; i++)
-			{	
-				#pragma omp task shared(S, gap_penalty, visited)
-				{
-					S[i][0] = i * gap_penalty;
-					// #pragma omp atomic
-					visited++;
-				}
-			}
+		S[i][0] = i * gap_penalty;
+		visited++;
+	}
 
-			for (unsigned int j = 0; j < cols; j++)
-			{	
-				#pragma omp task shared(S, gap_penalty, visited)
-				{
-					S[0][j] = j * gap_penalty;
-					// #pragma omp atomic
-					visited++;
-				}
-			}
-
-		}
+	for (unsigned int j = 0; j < cols; j++)
+	{
+		S[0][j] = j * gap_penalty;
+		visited++;
 	}
 
 	// Main part
-	#pragma omp parallel
+	for (int d = 1; d < rows + cols - 1; d++)
 	{
-		#pragma omp single
+		for (unsigned int i = std::max(1, d - cols + 1); i < std::min(d, rows - 1) + 1; i++)
 		{
-			for (int d = 1; d < rows+cols-1; d++)
-				for (unsigned int i = std::max(1, d-cols+1); i < std::min(d,rows-1)+1; i++)
-					#pragma omp task shared(S, SUB, X, Y, gap_penalty, visited)
-				{
-					unsigned int j = d - i;
-					if (j>0) {
-						float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
-						float del = S[i - 1][j] + gap_penalty;
-						float insert = S[i][j - 1] + gap_penalty;
-						S[i][j] = std::max({match, del, insert});
-
-						visited++;
-					}
-				}
+			unsigned int j = d - i;
+			if (j>0) {
+				float match = S[i - 1][j - 1] + SUB[cmap.at(X[i - 1])][cmap.at(Y[j - 1])];
+				float del = S[i - 1][j] + gap_penalty;
+				float insert = S[i][j - 1] + gap_penalty;
+				S[i][j] = std::max({match, del, insert});
+		
+				visited++;
+			}
 		}
-
 	}
 
 	return visited;
